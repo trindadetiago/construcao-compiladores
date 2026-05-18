@@ -1,0 +1,13 @@
+# Build artifacts (saidas do compilador / assembler / linker)
+*.s
+*.o
+p1
+!runtime.s
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
