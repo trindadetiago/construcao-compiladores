@@ -3,6 +3,15 @@
 Compilador para a linguagem CI (Constantes Inteiras), referente a Atividade 02 da
 disciplina de Compiladores.
 
+## Equipe
+
+| Nome | Curso | Matricula | E-mail |
+| --- | --- | --- | --- |
+| Tiago Trindade de Oliveira | Ciencia da Computacao/CI | 20220054982 | tto@academico.ufpb.br |
+| Ralf Dewrich Ferreira | Engenharia da Computacao/CI | 20220060783 | ralf.ferreira@academico.ufpb.br |
+| Yan Fabber Lima de Albuquerque | Ciencia da Computacao/CI | 20220070805 | yan.fabber@gmail.com |
+| Daniel Victor Carneiro Brandao da Costa | Ciencia da Computacao/CI | 20230089678 | danielvictorcarneiro21@gmail.com |
+
 A linguagem CI aceita programas que contem apenas uma constante inteira (um ou
 mais digitos). O compilador gera um arquivo assembly x86-64 (sintaxe GNU
 Assembler, Linux) que, depois de montado e linkado, imprime essa constante.
