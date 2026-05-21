@@ -1,0 +1,36 @@
+==============================================
+PLANO E RELATORIO - ATIVIDADE 04
+Analise Lexica da Linguagem EC1
+==============================================
+
+Equipe:
+- Tiago Trindade de Oliveira
+- Ralf Dewrich Ferreira
+- Yan Fabber Lima de Albuquerque
+- Daniel Victor Carneiro Brandao da Costa
+
+==============================================
+PLANO
+==============================================
+
+Pretendemos implementar o analisador lexico da linguagem EC1 em Python,
+reconhecendo os tokens de numero, parenteses e operadores (+, -, *, /),
+com tratamento de espacos em branco e reporte de erros lexicos. O analisador
+recebera o arquivo de entrada por argumento de linha de comando e imprimira
+a sequencia de tokens. Incluiremos testes para entradas validas (com
+variacoes de espacos) e para entradas com erros lexicos.
+
+==============================================
+RELATORIO
+==============================================
+
+Implementamos o analisador lexico da linguagem EC1 em Python. O analisador
+reconhece os tokens de numero, parentese esquerdo, parentese direito e os
+quatro operadores (+, -, *, /), ignora espacos em branco (espaco, tab, nova
+linha e retorno de carro) e reporta erros lexicos informando a posicao do
+caractere invalido. Recebe o arquivo de entrada por argumento de linha de
+comando e imprime a sequencia de tokens no formato <tipo, lexema, posicao>.
+Criamos 8 testes para o analisador lexico, sendo 4 com entradas validas
+(constante simples, expressao simples, expressao aninhada e expressao com
+variacoes de espacos/tabs/quebras de linha) e 4 com entradas invalidas
+(caracteres fora do alfabeto da linguagem em posicoes diferentes).
