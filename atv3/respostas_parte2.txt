@@ -1,0 +1,101 @@
+==============================================
+ATIVIDADE 03 - PARTE 2
+Respostas as perguntas sobre tradução de
+expressões aritméticas para assembly x86-64
+==============================================
+
+Equipe:
+- Tiago Trindade de Oliveira
+- Ralf Dewrich Ferreira
+- Yan Fabber Lima de Albuquerque
+- Daniel Victor Carneiro Brandao da Costa
+
+
+----------------------------------------------
+Questao 1
+----------------------------------------------
+Qual o menor numero de registradores necessarios para calcular a expressao
+    a1 + a2 + ... + an
+em assembly, sendo todos os a_i constantes inteiras?
+
+Resposta: 1 registrador.
+
+Justificativa: como cada a_i e uma constante, ele pode ser usado como
+operando imediato da instrucao ADD. Basta carregar a1 em um registrador e
+ir acumulando as demais constantes nesse mesmo registrador:
+
+    mov $a1, %rax
+    add $a2, %rax
+    add $a3, %rax
+    ...
+    add $an, %rax
+
+Nao precisamos de nenhum registrador adicional para guardar os operandos,
+porque eles aparecem como imediatos na propria instrucao.
+
+
+----------------------------------------------
+Questao 2
+----------------------------------------------
+Qual o menor numero de registradores necessarios para calcular
+    (a11 * a12 * ... * a1n) + ... + (am1 * am2 * ... * amn)
+em assembly, sendo todos os a_ij constantes inteiras?
+
+Resposta: 2 registradores.
+
+Justificativa: um registrador guarda o produto da linha atual e o outro
+guarda a soma acumulada. Para cada parcela calculamos o produto no
+registrador temporario (usando IMUL com imediato, sem precisar de mais
+registradores) e somamos no acumulador:
+
+    mov  $a11, %rcx       # rcx = produto da 1a parcela
+    imul $a12, %rcx
+    ...
+    imul $a1n, %rcx
+    mov  %rcx, %rax       # rax = soma acumulada
+
+    mov  $a21, %rcx
+    imul $a22, %rcx
+    ...
+    imul $a2n, %rcx
+    add  %rcx, %rax
+    ...
+
+Com 1 registrador so nao da, porque enquanto se calcula a parcela atual
+precisamos preservar a soma das parcelas anteriores em algum lugar. Com 2
+registradores e suficiente, e a quantidade independe de m e de n.
+
+
+----------------------------------------------
+Questao 3
+----------------------------------------------
+Existe alguma forma de calcular expressoes aritmeticas constantes (com soma,
+subtracao, multiplicacao e divisao) de tamanho arbitrario com um numero
+limitado de registradores, ou o numero de registradores pode crescer sem
+limite?
+
+Resposta: depende do que se permite usar.
+
+(a) Se so podemos usar registradores (sem encostar na memoria), o numero
+    de registradores necessarios pode crescer sem limite com o tamanho da
+    expressao. Em uma expressao da forma E1 op E2 em que tanto E1 quanto
+    E2 sao subexpressoes compostas, precisamos calcular uma delas, guardar
+    o resultado, calcular a outra, e so entao combinar - ou seja, o
+    resultado intermediario tem que ficar em algum registrador enquanto a
+    outra subarvore e avaliada. Para expressoes balanceadas de altura h, o
+    minimo de registradores e proporcional a h (algoritmo de Sethi-Ullman),
+    portanto cresce com o tamanho da expressao. Para soma e multiplicacao
+    daria para reescrever a expressao usando associatividade e baixar essa
+    necessidade, mas subtracao e divisao nao sao associativas, entao
+    expressoes profundas nesses operadores forcam o uso de muitos
+    registradores.
+
+(b) Se podemos usar memoria (a pilha, por exemplo), entao bastam 2
+    registradores fixos para qualquer expressao, por maior que seja: sempre
+    que estivermos sem registrador para guardar um resultado intermediario,
+    fazemos PUSH para a pilha; quando precisarmos do valor de volta, fazemos
+    POP. Essa e a tecnica que compiladores reais usam quando passam dos
+    registradores disponiveis - o chamado spilling.
+
+Em resumo: sem memoria, o numero de registradores necessario nao tem cota
+superior fixa; com memoria, 2 registradores ja resolvem qualquer caso.

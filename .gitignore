@@ -1,8 +1,12 @@
-# Build artifacts (saidas do compilador / assembler / linker)
-*.s
-*.o
-p1
-!runtime.s
+# Build artifacts da atv2 (saidas do compilador / assembler / linker)
+atv2/*.s
+atv2/*.o
+atv2/p1
+!atv2/runtime.s
+
+# Build artifacts da atv3
+atv3/*.o
+atv3/zeller
 
 # Python
 __pycache__/
