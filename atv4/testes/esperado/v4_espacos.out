@@ -1,0 +1,9 @@
+<ParenEsq, "(", 0>
+<Numero, "33", 1>
+<Soma, "+", 4>
+<ParenEsq, "(", 6>
+<Numero, "912", 7>
+<Mult, "*", 11>
+<Numero, "11", 13>
+<ParenDir, ")", 15>
+<ParenDir, ")", 16>

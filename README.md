@@ -17,7 +17,7 @@ Repositorio com as atividades da disciplina de Construcao de Compiladores.
 | --- | --- | --- |
 | [`atv2/`](atv2/) | Compilador CI (Constantes Inteiras) | Concluida |
 | [`atv3/`](atv3/) | Congruencia de Zeller em x86-64 | Concluida |
-| [`atv4/`](atv4/) | Expressoes Constantes 1 - Analise Lexica | Em andamento |
+| [`atv4/`](atv4/) | Expressoes Constantes 1 - Analise Lexica | Concluida |
 
 Cada pasta contem o enunciado da atividade (PDF), o codigo entregue e a
 documentacao de uso especifica.
