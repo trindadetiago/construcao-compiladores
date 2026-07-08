@@ -136,5 +136,6 @@ docker run --rm -v "$PWD":/app compev
 | `runtime.s` | Sub-rotinas `imprime_num` e `sair` |
 | `test.sh` | Testes automaticos com oraculo e verificacao cruzada |
 | `Dockerfile` | Ambiente em container com `binutils` e `python3` |
+| `plano_relatorio_atv8.txt` | Plano e relatorio da atividade |
 | `testes/*.ev` | Entradas de teste validas e invalidas |
 | `testes/esperado/*.out` | Saidas esperadas dos casos validos |

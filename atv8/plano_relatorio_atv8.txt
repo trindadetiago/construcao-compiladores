@@ -1,0 +1,44 @@
+==============================================
+PLANO E RELATORIO - ATIVIDADE 08
+Expressoes com Variaveis
+==============================================
+
+Equipe:
+- Tiago Trindade de Oliveira
+- Ralf Dewrich Ferreira
+- Yan Fabber Lima de Albuquerque
+- Daniel Victor Carneiro Brandao da Costa
+
+==============================================
+PLANO
+==============================================
+
+Pretendemos implementar o compilador da linguagem EV, partindo do compilador
+EC2 da Atividade 07. A implementacao devera adicionar identificadores,
+declaracoes de variaveis, expressao final iniciada por "=", analise semantica
+para detectar variaveis usadas antes da declaracao e geracao de assembly com
+variaveis reservadas na secao .bss. Tambem incluiremos testes validos e
+invalidos e documentacao de uso.
+
+==============================================
+RELATORIO
+==============================================
+
+Implementamos o compilador da linguagem EV em Python. O compilador reconhece
+declaracoes de variaveis, expressoes com constantes, identificadores,
+parenteses e operadores aritmeticos com precedencia e associatividade a
+esquerda. Tambem implementamos analise semantica para rejeitar variaveis nao
+declaradas e geracao de assembly x86-64 usando a secao .bss para armazenar as
+variaveis.
+
+Criamos 21 testes: 10 com entradas validas e 11 com entradas invalidas. Os
+casos validos cobrem resultado sem declaracoes, uso de variaveis, dependencias
+entre declaracoes, precedencia, associatividade, divisao truncada e
+identificadores com letras/digitos. Os casos invalidos cobrem variavel nao
+declarada, identificador comecando por digito, erro sintatico, operador unario,
+divisao por zero, caractere invalido, expressao incompleta e digito fora do
+alfabeto ASCII da linguagem.
+
+Tambem adicionamos README, Dockerfile e script de testes. A suite foi validada
+localmente e tambem em Docker, com montagem, link-edicao e execucao dos
+binarios gerados.
