@@ -137,5 +137,6 @@ docker run --rm -v "$PWD":/app compev
 | `test.sh` | Testes automaticos com oraculo e verificacao cruzada |
 | `Dockerfile` | Ambiente em container com `binutils` e `python3` |
 | `plano_relatorio_atv8.txt` | Plano e relatorio da atividade |
+| `relatorio_compilador_ev.pdf` | Relatorio em PDF da atividade |
 | `testes/*.ev` | Entradas de teste validas e invalidas |
 | `testes/esperado/*.out` | Saidas esperadas dos casos validos |
