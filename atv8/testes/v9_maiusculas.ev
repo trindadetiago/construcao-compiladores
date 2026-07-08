@@ -1,0 +1,3 @@
+Altura2 = 12;
+Largura = Altura2 + 8;
+= Largura * 2
