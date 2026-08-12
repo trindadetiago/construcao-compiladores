@@ -27,3 +27,15 @@ Repositorio com as atividades da disciplina de Construcao de Compiladores.
 
 Cada pasta contem o enunciado da atividade (PDF), o codigo entregue e a
 documentacao de uso especifica.
+
+## Projeto final
+
+A pasta [`projeto-final/`](projeto-final/) contem o material da apresentacao
+final da disciplina:
+
+| Arquivo | Descricao |
+| --- | --- |
+| [`deck.html`](projeto-final/deck.html) | Slides "Tres Extensoes da Fun", com o roteiro da apresentacao e a retrospectiva das atividades do Marco I ate a linguagem Fun |
+
+O deck e um arquivo HTML autocontido (sem dependencias externas): basta abri-lo
+em qualquer navegador.

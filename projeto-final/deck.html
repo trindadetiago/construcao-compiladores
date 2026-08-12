@@ -1,0 +1,875 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Três Extensões da Fun</title>
+<style>
+  :root{
+    --k:1;          /* escala do palco (present) */
+    --kr:.52;       /* escala das miniaturas (roteiro) */
+    --azul:#3D8DFF;
+    --tinta:#000000;
+    --tinta2:#3C3C3C;
+    --tinta3:#6E6E6E;
+    --cinza:#F0F0F0;
+    --cinza-b:#DCDCDC;
+    --palco:#14171C;
+    --palco-2:#EEF0F4;
+    --sans:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--palco);
+    color:#FFFFFF;
+    font-family:var(--sans);
+    overflow:hidden;
+  }
+  body.roteiro{background:var(--palco-2);color:#111111;overflow:auto}
+
+  /* ---------------- palco ---------------- */
+  #stage{
+    height:100vh;display:flex;align-items:center;justify-content:center;
+  }
+  body.roteiro #stage{
+    height:auto;display:block;
+    max-width:1180px;margin:0 auto;padding:26px 22px 100px;
+  }
+
+  .slide{display:none}
+  .slide.active{display:block}
+  body.roteiro .slide{display:grid;gap:20px;margin:0 0 34px}
+  @media (min-width:1000px){
+    body.roteiro .slide{grid-template-columns:calc(1280px * var(--kr)) 1fr;align-items:start}
+  }
+
+  /* moldura que reserva o espaço do canvas escalado */
+  .frame{
+    width:calc(1280px * var(--k));
+    height:calc(720px * var(--k));
+    position:relative;flex:none;
+  }
+  body.roteiro .frame{
+    width:calc(1280px * var(--kr));
+    height:calc(720px * var(--kr));
+  }
+  .canvas{
+    position:absolute;top:0;left:0;
+    width:1280px;height:720px;
+    transform:scale(var(--k));transform-origin:top left;
+    background:#FFFFFF;color:var(--tinta);
+    overflow:hidden;
+  }
+  body.roteiro .canvas{
+    transform:scale(var(--kr));
+    border:1px solid var(--cinza-b);
+  }
+
+  /* ---------------- gramática visual do slide ---------------- */
+  .barra{position:absolute;left:0;top:0;width:1280px;height:8px;background:var(--azul)}
+  .num{
+    position:absolute;right:48px;bottom:36px;
+    font-size:11px;color:var(--tinta);font-variant-numeric:tabular-nums;
+  }
+  .titulo{
+    position:absolute;left:41px;top:36px;width:1198px;
+    font-size:31px;font-weight:700;line-height:1.06;letter-spacing:-.4px;
+  }
+  .olho{
+    position:absolute;left:41px;top:41px;
+    font-size:17px;font-weight:700;letter-spacing:.7px;color:var(--azul);
+  }
+  .capa-t{
+    position:absolute;left:41px;top:206px;width:1000px;
+    font-size:54px;font-weight:700;line-height:1.03;letter-spacing:-1.4px;
+  }
+  .capa-s{position:absolute;left:44px;top:430px;font-size:21px;color:var(--tinta2)}
+  .capa-n{position:absolute;left:44px;top:502px;font-size:22px}
+
+  /* trilha de 3 marcos (mesma linguagem do deck atual) */
+  .trilha{position:absolute;left:0;top:0;width:1280px;height:720px}
+  .linha{position:absolute;left:41px;top:0;width:1198px;height:1px;background:var(--tinta)}
+  .ponto{position:absolute;width:13px;height:13px;border-radius:50%;background:var(--tinta);margin-top:-6px}
+  .marco-l{position:absolute;font-size:14px;letter-spacing:.5px;color:var(--tinta)}
+  .col{position:absolute;width:332px}
+  .col h3{margin:0 0 9px;font-size:22px;font-weight:700;line-height:1.1}
+  .col p{margin:0;font-size:17px;line-height:1.3;color:var(--tinta2)}
+
+  /* cartões cinza (padrão do slide 14 deles) */
+  .cartao{
+    position:absolute;width:366px;height:300px;
+    background:var(--cinza);border-radius:14px;padding:30px 28px;
+  }
+  .cartao h3{margin:0 0 12px;font-size:23px;font-weight:700}
+  .cartao p{margin:0;font-size:17px;line-height:1.34;color:var(--tinta2)}
+  .cartao .tag{
+    position:absolute;left:28px;bottom:26px;
+    font-size:12px;letter-spacing:.9px;color:var(--tinta3);
+  }
+
+  /* linhas rótulo → descrição */
+  .linhas{position:absolute;left:41px;top:196px;width:1198px}
+  .lin{display:grid;grid-template-columns:236px 1fr;gap:26px;align-items:baseline;padding:19px 0}
+  .lin+.lin{border-top:1px solid #E8E8E8}
+  .lin dt{font-size:21px;font-weight:700;letter-spacing:.2px}
+  .lin dd{margin:0;font-size:18px;line-height:1.32;color:var(--tinta2)}
+
+  /* destaque / fórmula */
+  .destaque{
+    position:absolute;left:41px;width:1198px;
+    background:var(--cinza);border-radius:12px;padding:20px 26px;
+    font-size:18px;line-height:1.36;color:var(--tinta2);
+  }
+  .destaque b{color:var(--tinta)}
+  code,.mono{font-family:var(--mono)}
+  .transf{
+    position:absolute;left:41px;width:1198px;text-align:center;
+    font-family:var(--mono);font-size:40px;font-weight:600;letter-spacing:-.5px;
+  }
+  .transf .seta{color:var(--azul);margin:0 26px;font-weight:400}
+  .legenda{
+    position:absolute;left:41px;width:1198px;text-align:center;
+    font-size:17px;color:var(--tinta3);
+  }
+  .ops{
+    position:absolute;left:41px;width:1198px;text-align:center;
+    font-family:var(--mono);font-size:27px;letter-spacing:5px;color:var(--tinta);
+  }
+  .intactos{position:absolute;left:41px;width:1198px;display:flex;gap:14px}
+  .intactos span{
+    flex:1;background:var(--cinza);border-radius:10px;padding:15px 16px;
+    font-size:15.5px;line-height:1.28;color:var(--tinta2);text-align:center;
+  }
+
+  pre.cod{
+    position:absolute;margin:0;
+    font-family:var(--mono);font-size:23px;line-height:1.62;
+    background:var(--cinza);border-radius:12px;padding:26px 30px;
+    color:var(--tinta);
+  }
+  pre.cod .cm{color:var(--tinta3)}
+  pre.cod .az{color:#1667D8}
+
+  .metricas{position:absolute;left:41px;width:1198px;display:flex;gap:16px}
+  .metricas div{flex:1;background:var(--cinza);border-radius:12px;padding:26px 24px}
+  .metricas .n{font-size:52px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1.5px}
+  .metricas .l{margin-top:11px;font-size:16px;color:var(--tinta2)}
+  .fecho{
+    position:absolute;left:41px;width:1100px;
+    font-size:25px;font-weight:700;line-height:1.22;letter-spacing:-.3px;
+  }
+
+  /* ---------------- barra de controles ---------------- */
+  #barraCtrl{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    display:flex;align-items:center;gap:10px;
+    padding:10px 16px;
+    background:rgba(10,12,16,.82);
+    border-top:1px solid rgba(255,255,255,.12);
+    font-family:var(--mono);font-size:12px;color:#C9D2DE;
+  }
+  body.roteiro #barraCtrl{
+    background:rgba(255,255,255,.94);
+    border-top:1px solid #D5DAE2;color:#333B48;
+  }
+  #barraCtrl button{
+    font-family:var(--mono);font-size:12px;font-weight:600;
+    color:inherit;background:transparent;
+    border:1px solid currentColor;border-radius:6px;
+    padding:5px 11px;cursor:pointer;
+  }
+  #barraCtrl button:hover{background:rgba(61,141,255,.22)}
+  #barraCtrl .quem{margin-left:auto;letter-spacing:.04em}
+  #barraCtrl .cont{font-variant-numeric:tabular-nums}
+  #barraCtrl .dica{opacity:.62}
+  @media (max-width:700px){#barraCtrl .dica{display:none}}
+  button:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+
+  /* ---------------- notas (roteiro) ---------------- */
+  .notas{display:none}
+  body.roteiro .notas{display:block;color:#141922}
+  .notas .cab{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline;margin-bottom:11px}
+  .notas .quem{
+    font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:#1A5FD0;
+    background:#E4EEFD;border-radius:20px;padding:4px 11px;
+  }
+  .notas .tempo{
+    font-family:var(--mono);font-size:12px;font-weight:600;
+    color:#57637A;font-variant-numeric:tabular-nums;
+  }
+  .notas .qual{font-family:var(--mono);font-size:12px;color:#7A8598}
+  .notas h4{
+    margin:0 0 8px;font-family:var(--mono);font-size:12px;font-weight:700;
+    letter-spacing:.1em;text-transform:uppercase;color:#7A8598;
+  }
+  .notas .fala{
+    border-left:3px solid #1A5FD0;padding:2px 0 2px 15px;margin:0 0 15px;
+    font-size:17px;line-height:1.58;max-width:62ch;
+  }
+  .notas .fala p{margin:0 0 10px}
+  .notas .fala p:last-child{margin:0}
+  .notas .aviso{
+    background:#FBF1DC;border-left:3px solid #8A5E00;border-radius:0 8px 8px 0;
+    padding:12px 15px;font-size:15.5px;line-height:1.5;max-width:64ch;color:#3D3320;
+  }
+  .notas .aviso b{color:#5E4300}
+  .notas ul{margin:0;padding-left:1.15em;font-size:15.5px;line-height:1.55;max-width:64ch}
+  .notas li{margin-bottom:5px}
+
+  /* ---------------- seção de estudo (só no roteiro) ---------------- */
+  #entender{display:none}
+  body.roteiro #entender{
+    display:block;max-width:1180px;margin:0 auto;padding:4px 22px 20px;color:#141922;
+  }
+  #entender h2{
+    margin:34px 0 6px;font-size:23px;font-weight:700;letter-spacing:-.4px;
+  }
+  #entender h2:first-child{margin-top:14px}
+  #entender .sub{margin:0 0 18px;font-size:16.5px;line-height:1.55;color:#3A4353;max-width:72ch}
+  #entender h3{margin:0 0 9px;font-size:18px;font-weight:700;letter-spacing:-.2px}
+  #entender p{margin:0 0 11px;font-size:16.5px;line-height:1.58;max-width:70ch}
+  #entender p:last-child{margin-bottom:0}
+  .grade{display:grid;gap:14px}
+  @media (min-width:880px){.grade.duas{grid-template-columns:1fr 1fr}}
+  .cartaoE{
+    background:#FFFFFF;border:1px solid #D9DFE9;border-radius:11px;padding:20px 22px;
+  }
+  .cartaoE .marca{
+    display:inline-block;font-family:var(--mono);font-size:11.5px;font-weight:700;
+    letter-spacing:.09em;text-transform:uppercase;color:#1A5FD0;
+    background:#E5EFFD;border-radius:20px;padding:4px 11px;margin-bottom:11px;
+  }
+  .ex{
+    display:block;font-family:var(--mono);font-size:14.5px;line-height:1.7;
+    background:#F2F4F8;border:1px solid #E1E7F0;border-radius:7px;
+    padding:11px 14px;margin:0 0 12px;white-space:pre-wrap;color:#1B2330;
+  }
+  .ex i{font-style:normal;color:#7A8598}
+  .dizer{
+    border-left:3px solid #1A5FD0;background:#F4F8FE;
+    border-radius:0 9px 9px 0;padding:12px 15px;margin:12px 0 0;
+    font-size:16px;line-height:1.55;
+  }
+  .dizer .rot{
+    display:block;font-family:var(--mono);font-size:11px;font-weight:700;
+    letter-spacing:.1em;text-transform:uppercase;color:#1A5FD0;margin-bottom:6px;
+  }
+  .mudou{
+    display:grid;grid-template-columns:88px 1fr;gap:4px 18px;
+    padding:14px 0;border-top:1px solid #E1E6EE;
+  }
+  .mudou:first-of-type{border-top:0}
+  .mudou dt{
+    font-family:var(--mono);font-size:13px;font-weight:700;color:#1A5FD0;padding-top:2px;
+  }
+  .mudou dd{margin:0;font-size:16.5px;line-height:1.55;max-width:66ch}
+  .mudou dd b{font-weight:700}
+  .naotem{
+    background:#FBF1DC;border-left:3px solid #8A5E00;border-radius:0 9px 9px 0;
+    padding:13px 16px;font-size:16px;line-height:1.55;color:#3D3320;max-width:70ch;
+  }
+
+  #cabRoteiro{display:none}
+  body.roteiro #cabRoteiro{
+    display:block;max-width:1180px;margin:0 auto;padding:30px 22px 4px;color:#111;
+  }
+  #cabRoteiro h1{
+    margin:0 0 10px;font-size:27px;font-weight:700;letter-spacing:-.5px;
+  }
+  #cabRoteiro p{margin:0 0 8px;font-size:16.5px;line-height:1.55;max-width:70ch;color:#3A4353}
+  #cabRoteiro .tot{
+    font-family:var(--mono);font-size:13px;color:#57637A;
+    background:#E3E8F0;border-radius:6px;padding:7px 12px;display:inline-block;margin-top:6px;
+  }
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div id="cabRoteiro">
+  <h1>Roteiro — Projeto Final</h1>
+  <p>Oito slides, quatro pessoas, cerca de 7 minutos. O professor pediu apresentações curtas e centradas nas extensões, então o histórico cabe em um slide só.</p>
+  <p>O enunciado exige duas coisas da apresentação: <strong>o que foi feito no compilador desde o Marco I</strong> — que o Plano de Curso define como o fim da Atividade 6 — <strong>e as extensões implementadas</strong>. O slide 2 cobre a primeira parte (atividades 7 a 10); os slides 4 a 8 cobrem a segunda. Projeto Final e Apresentações valem 40% da nota.</p>
+  <p class="tot">Tiago 1:20 · Ralf 1:30 · Yan 1:30 · Daniel 3:00 → ≈ 7:20</p>
+</div>
+
+<section id="entender">
+
+  <h2>Antes de falar: entender</h2>
+  <p class="sub">Esta parte não vai para a tela — é para você. Se você entender os cinco conceitos abaixo, a sua fala de 1min20 sai natural, e você aguenta uma pergunta sem travar. Cada bloco termina com uma frase pronta, mas leia a explicação primeiro: a frase pronta só ajuda se você souber o que está por trás dela.</p>
+
+  <!-- ============ 1. VOCABULÁRIO ============ -->
+  <h2>1. Quatro palavras que aparecem em tudo</h2>
+  <p class="sub">Um compilador é um <b>tradutor</b>: lê um programa escrito por uma pessoa e produz o mesmo programa em linguagem de máquina. Ele faz isso em etapas, e cada etapa se chama <b>fase</b>. As quatro palavras abaixo são os nomes dessas fases e das coisas que passam entre elas.</p>
+
+  <div class="grade duas">
+    <div class="cartaoE">
+      <span class="marca">Fase 1 · léxico</span>
+      <h3>Token</h3>
+      <p>O programa chega como uma sequência de caracteres soltos. A análise léxica junta esses caracteres em <b>palavras</b> — e cada palavra dessas é um token.</p>
+      <span class="ex">entrada:  (33 + 912)
+
+tokens:   (   33   +   912   )
+          <i>abre  núm  op   núm  fecha</i></span>
+      <p>Sem essa fase, o compilador estaria lendo um texto sem espaço entre as palavras.</p>
+    </div>
+
+    <div class="cartaoE">
+      <span class="marca">Fase 2 · sintático</span>
+      <h3>Árvore (AST)</h3>
+      <p>De posse dos tokens, a análise sintática verifica se aquela sequência forma uma expressão válida — e monta uma <b>árvore</b> que representa o significado, sem os parênteses e sem a ordem em que foi escrito.</p>
+      <span class="ex">2 + 3 * 4   vira:
+
+      +
+     / \
+    2   *
+       / \
+      3   4</span>
+      <p>A árvore já diz que a multiplicação acontece antes. Ela guarda o <i>sentido</i>, não a escrita.</p>
+    </div>
+
+    <div class="cartaoE">
+      <span class="marca">Fase 3 · semântico</span>
+      <h3>Análise semântica</h3>
+      <p>A frase pode estar bem escrita e ainda assim não fazer sentido. Esta fase pega esses casos — por exemplo, usar uma variável que nunca foi declarada.</p>
+      <span class="ex">x = y + 1;   <i>← y nunca foi declarado</i>
+
+sintaxe: ok
+semântica: ERRO</span>
+      <p>Só passa a existir na Atividade 8, quando a linguagem ganha variáveis. Antes disso não havia nada de errado possível nesse nível.</p>
+    </div>
+
+    <div class="cartaoE">
+      <span class="marca">Fase 4 · geração</span>
+      <h3>Geração de código</h3>
+      <p>Percorre a árvore e escreve o programa equivalente em <b>assembly x86-64</b> — a linguagem do processador. É a saída do compilador.</p>
+      <span class="ex">árvore de 2 + 3   gera:
+
+  mov $3, %rax
+  push %rax
+  mov $2, %rax
+  pop %rbx
+  add %rbx, %rax</span>
+      <p><span class="mono">%rax</span> e <span class="mono">%rbx</span> são registradores: as gavetas dentro do processador onde as contas acontecem.</p>
+    </div>
+  </div>
+
+  <div class="dizer">
+    <span class="rot">Como dizer</span>
+    "O compilador funciona em fases: o léxico junta caracteres em tokens, o sintático monta uma árvore com o significado, o semântico verifica o que a sintaxe não pega, e a geração transforma a árvore em assembly."
+  </div>
+
+  <!-- ============ 2. ATÉ A ATIVIDADE 6 ============ -->
+  <h2>2. O que foi feito até a Atividade 6 — o Marco I</h2>
+  <p class="sub">O Marco I é o ponto de referência que o enunciado usa, e o Plano de Curso o define como o <b>fim da Atividade 6</b>. Você não precisa contar isso no palco — precisa saber, porque é de onde a sua fala parte. Em uma frase: <b>no Marco I já existia um compilador completo, mas a linguagem dele só sabia fazer conta com números fixos.</b></p>
+
+  <dl style="margin:0">
+    <div class="mudou">
+      <dt>Atv. 2</dt>
+      <dd><b>O primeiro compilador, minúsculo.</b> A linguagem se chamava CI e um programa válido era só um número inteiro — literalmente <span class="mono">42</span>. O compilador conferia se era mesmo um número e encaixava esse número num molde de assembly pronto. Já tinha as duas metades de qualquer compilador: <b>conferir a entrada</b> e <b>gerar a saída</b>.</dd>
+    </div>
+    <div class="mudou">
+      <dt>Atv. 3</dt>
+      <dd><b>Assembly na mão, sem compilador nenhum.</b> Escreveram um programa em assembly x86-64 que calcula o dia da semana de uma data (congruência de Zeller). Serviu para aprender como o processador faz conta — o que é preciso saber antes de ensinar uma máquina a gerar essas contas sozinha.</dd>
+    </div>
+    <div class="mudou">
+      <dt>Atv. 4</dt>
+      <dd><b>A linguagem virou expressão, e nasceu o léxico.</b> A linguagem EC1 aceita contas com <span class="mono">+ - * /</span> e parênteses, mas <b>toda operação tinha que estar entre parênteses</b>: era obrigatório escrever <span class="mono">(2 + (3 * 4))</span>. Esta atividade construiu só a primeira fase: o analisador léxico, que transforma os caracteres em tokens e aponta a posição exata de um caractere inválido.</dd>
+    </div>
+    <div class="mudou">
+      <dt>Atv. 5</dt>
+      <dd><b>Os tokens viraram árvore, e a árvore virou resultado.</b> Entrou o analisador sintático, que confere se os tokens formam uma expressão válida e monta a árvore. E entrou um <b>interpretador</b>: um programa que percorre a árvore e calcula o resultado na hora. O interpretador não gera código — ele serviu de gabarito, para conferir se o compilador daria a mesma resposta.</dd>
+    </div>
+    <div class="mudou">
+      <dt>Atv. 6</dt>
+      <dd><b>A mesma árvore passou a gerar assembly. Aqui é o Marco I.</b> O gerador de código percorre exatamente a mesma árvore que o interpretador percorria, mas em vez de calcular, escreve instruções x86-64. A estratégia: gera o lado direito, empilha o resultado, gera o lado esquerdo, desempilha e combina. Assim dá conta de qualquer expressão, por mais aninhada que seja, usando só dois registradores.</dd>
+    </div>
+  </dl>
+
+  <div class="dizer">
+    <span class="rot">Como dizer</span>
+    "No Marco I, no fim da atividade 6, a gente já tinha um compilador completo — léxico, parser, árvore e geração de código x86-64 — mas para uma linguagem que só fazia conta com números fixos, e com parênteses obrigatórios em toda operação."
+  </div>
+
+  <!-- ============ 3. PRECEDÊNCIA ============ -->
+  <h2>3. O que é precedência — e o que a Atividade 7 resolveu</h2>
+  <p class="sub">Esse é o conceito que mais vale entender, porque é o primeiro item da sua fala e o mais fácil de explicar errado.</p>
+
+  <div class="cartaoE">
+    <h3>O problema</h3>
+    <p>Até a Atividade 6, a linguagem exigia parênteses em <b>toda</b> operação. Você não podia escrever <span class="mono">2 + 3 * 4</span> — tinha que escrever <span class="mono">(2 + (3 * 4))</span>. Isso não é um capricho: era uma forma de <b>fugir</b> do problema. Com todos os parênteses no lugar, o compilador nunca precisa decidir nada, porque a ordem já está escrita.</p>
+    <p style="margin-top:14px"><b>Precedência</b> é justamente a regra que permite tirar os parênteses: ela diz quais operadores são resolvidos primeiro. Multiplicação e divisão têm precedência maior que soma e subtração.</p>
+    <span class="ex" style="margin-top:14px">2 + 3 * 4
+
+com precedência:  2 + (3 * 4)  =  14   <i>← o certo</i>
+sem precedência:  (2 + 3) * 4  =  20   <i>← errado</i></span>
+    <p>E existe uma segunda regra, a <b>associatividade</b>, para quando os operadores têm a mesma força. À esquerda significa agrupar da esquerda para a direita:</p>
+    <span class="ex">10 - 3 - 2
+
+à esquerda:  (10 - 3) - 2  =  5    <i>← o certo</i>
+à direita:   10 - (3 - 2)  =  9    <i>← errado</i></span>
+    <p>Para soma e multiplicação isso não mudaria o resultado, mas <b>subtração e divisão não são associativas</b> — então sem essa regra a conta sai errada.</p>
+    <div class="dizer">
+      <span class="rot">Como dizer</span>
+      "Até a atividade 6, o programador era obrigado a escrever todos os parênteses. A atividade 7 trouxe precedência e associatividade, então a expressão passou a poder ser escrita como a gente escreve na matemática — <span class="mono">2 + 3 * 4</span> — e o compilador resolve a multiplicação antes, sozinho."
+    </div>
+  </div>
+
+  <div class="cartaoE" style="margin-top:14px">
+    <h3>Como isso foi feito, se perguntarem</h3>
+    <p>A precedência é resolvida na <b>gramática</b>, na fase sintática — não na geração de código. A gramática ganhou níveis, e cada nível é uma função do parser que só cuida de um grupo de operadores:</p>
+    <span class="ex">exp_aditiva     →  trata  +  e  -     (nível de cima, mais fraco)
+exp_multiplicativa →  trata  *  e  /   (nível do meio)
+primária        →  número ou ( ... )   (nível de baixo, mais forte)</span>
+    <p>O nível de cima chama o de baixo. Como o multiplicativo é resolvido "mais fundo" na recursão, ele acaba agrupado primeiro — e é daí que sai a precedência. A associatividade à esquerda vem de cada nível usar um laço que vai juntando da esquerda para a direita.</p>
+  </div>
+
+  <!-- ============ 4. CADA ATIVIDADE DEPOIS DO MARCO I ============ -->
+  <h2>4. O que cada atividade mudou de fato, do Marco I até a Fun</h2>
+  <p class="sub">Isto é o conteúdo do seu slide 2. A coluna da direita é o que realmente mudou — não o nome bonito.</p>
+
+  <dl style="margin:0">
+    <div class="mudou">
+      <dt>Atv. 7</dt>
+      <dd><b>Precedência.</b> Antes: parênteses obrigatórios em toda operação. Depois: <span class="mono">2 + 3 * 4</span> funciona. Mudou só a <b>gramática</b>, na fase sintática — a árvore, o interpretador e a geração de código continuaram iguais.</dd>
+    </div>
+    <div class="mudou">
+      <dt>Atv. 8</dt>
+      <dd><b>Variáveis.</b> Antes: só números fixos na expressão. Depois: dá para dar nome a um valor e reusar (<span class="mono">l = 30; c = 40; = l + l + c + c</span>). Isso obrigou a criar duas coisas novas: a <b>análise semântica</b>, que recusa variável usada antes de declarada, e um lugar na memória para guardar os valores — a seção <span class="mono">.bss</span> do assembly.</dd>
+    </div>
+    <div class="mudou">
+      <dt>Atv. 9</dt>
+      <dd><b>Comandos.</b> Antes: o programa era uma expressão só, calculada de uma vez. Depois: o programa é uma <b>sequência de comandos</b> — atribuição, <span class="mono">if</span> e <span class="mono">while</span>. Isso trouxe estado que muda ao longo do tempo e desvio de fluxo, o que na geração de código significa <b>rótulos e saltos</b>.</dd>
+    </div>
+    <div class="mudou">
+      <dt>Atv. 10</dt>
+      <dd><b>Funções — a linguagem Fun.</b> Antes: sem forma de reaproveitar um trecho de lógica; era preciso copiar e colar. Depois: declarar função com parâmetros, ter variáveis locais e chamar a própria função (recursão). Na geração de código isso exige <b>disciplina de pilha</b>: os argumentos são empilhados, e o registrador <span class="mono">RBP</span> serve de referência para achar parâmetros e variáveis locais.</dd>
+    </div>
+  </dl>
+
+  <div class="naotem" style="margin-top:16px">
+    <b>Atenção nas atividades 9 e 10.</b> Elas não estão no repositório que você tem — ele vai até a 8. As atividades 7 e 8 você pode afirmar com segurança, porque o código está lá e eu conferi. Já comandos e funções vêm do deck e do que a equipe escreveu: confirme com quem implementou e não vá além dessa lista.
+  </div>
+
+  <!-- ============ 5. AS TRÊS EXTENSÕES ============ -->
+  <h2>5. As três extensões, em português simples</h2>
+  <p class="sub">Você não apresenta nenhuma das três — mas você anuncia as três no fim da sua fala, e pode receber pergunta. O mínimo é saber o que cada uma é.</p>
+
+  <div class="grade duas">
+    <div class="cartaoE">
+      <span class="marca">Ralf · operador %</span>
+      <h3>O que é um operador</h3>
+      <p>Um <b>operador</b> é um símbolo que pega dois valores e produz um terceiro. <span class="mono">+</span> pega 2 e 3 e produz 5. <span class="mono">*</span> pega 2 e 3 e produz 6.</p>
+      <p>O <span class="mono">%</span> é o operador de <b>resto da divisão</b> — e cuidado, não tem nada a ver com porcentagem, apesar do símbolo. Ele dá o que sobra de uma divisão inteira:</p>
+      <span class="ex">17 % 5  =  2
+
+<i>porque 17 dividido por 5 dá 3,
+e sobram 2  (3 × 5 = 15, faltam 2 para 17)</i></span>
+      <p>Serve, por exemplo, para saber se um número é par: <span class="mono">n % 2</span> dá 0 se for par.</p>
+      <div class="dizer">
+        <span class="rot">Se perguntarem para você</span>
+        "É o operador de resto da divisão. <span class="mono">17 % 5</span> dá 2, porque 17 dividido por 5 dá 3 e sobram 2."
+      </div>
+    </div>
+
+    <div class="cartaoE">
+      <span class="marca">Yan · atribuição composta</span>
+      <h3>O que é atribuição composta</h3>
+      <p><b>Atribuição</b> é guardar um valor num nome: <span class="mono">x = 5</span> quer dizer "x passa a valer 5".</p>
+      <p><b>Atribuição composta</b> é um atalho de escrita para quando você quer mudar o valor com base nele mesmo:</p>
+      <span class="ex">x += 5     é o mesmo que   x = x + 5
+x *= 2     é o mesmo que   x = x * 2
+x %= 5     é o mesmo que   x = x % 5</span>
+      <p>Repare: a linguagem <b>não ganhou nenhum poder novo</b> — tudo que dá para escrever com <span class="mono">+=</span> já dava para escrever antes, só de forma mais longa. É por isso que se chama <b>açúcar sintático</b>: adoça a escrita, não muda o que a máquina faz.</p>
+      <div class="dizer">
+        <span class="rot">Se perguntarem para você</span>
+        "São atalhos: <span class="mono">x += 5</span> significa <span class="mono">x = x + 5</span>. O parser desfaz o atalho antes de montar a árvore, então nenhuma fase depois dele precisou mudar."
+      </div>
+    </div>
+
+    <div class="cartaoE">
+      <span class="marca">Daniel · comando print</span>
+      <h3>O que é o comando print</h3>
+      <p>Antes dessa extensão, o programa calculava um resultado e ele era impresso <b>uma vez, no final, automaticamente</b>. Não havia como olhar um valor no meio do caminho.</p>
+      <p>O <span class="mono">print</span> permite imprimir <b>onde você quiser, quantas vezes quiser</b>:</p>
+      <span class="ex">x = 17;
+x %= 5;
+print x;      <i>← imprime 2</i></span>
+      <p>E aqui vale entender a diferença de categoria: <span class="mono">%</span> é um <b>operador</b>, porque produz um valor. <span class="mono">print</span> é um <b>comando</b>, porque não produz valor — ele <i>faz</i> uma coisa, causa um efeito no mundo. Foi por isso que o print precisou de um nó novo na árvore e a atribuição composta não.</p>
+      <div class="dizer">
+        <span class="rot">Se perguntarem para você</span>
+        "É um comando para imprimir um valor no meio do programa. Antes só dava para imprimir o resultado final, uma vez."
+      </div>
+    </div>
+
+    <div class="cartaoE">
+      <span class="marca">o argumento</span>
+      <h3>Por que essas três provam algo</h3>
+      <p>É esta a ideia que a sua fala planta e que os outros três confirmam sem precisar dizer:</p>
+      <p><b>O <span class="mono">%</span></b> atravessa todas as fases (léxico, sintático, árvore, geração), mas reaproveita o nó de operação binária que já existia e uma instrução do processador que já dava o resto de graça.</p>
+      <p><b>O <span class="mono">+=</span></b> morre no parser: as fases seguintes nem sabem que ele existe.</p>
+      <p><b>O <span class="mono">print</span></b> precisou de um nó novo, mas reusou a impressão que já existia.</p>
+      <p style="margin-top:12px">Nenhuma das três exigiu reescrever nada. E isso só é possível porque <b>cada fase tem uma responsabilidade separada</b> — que é exatamente o que as atividades 7 a 10 foram construindo.</p>
+      <div class="dizer">
+        <span class="rot">A frase que amarra tudo</span>
+        "As extensões foram baratas porque as fases já estavam separadas. Não foi sorte."
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<div id="stage">
+
+  <!-- ============================= 1 ============================= -->
+  <article class="slide active" data-quem="Tiago" data-tempo="0:20">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="olho">CONSTRUÇÃO DE COMPILADORES · UFPB</div>
+      <div class="capa-t">Três extensões sobre uma linguagem que já funcionava</div>
+      <div class="capa-s">Operador % · Atribuições compostas · Comando print</div>
+      <div class="capa-n">Tiago · Ralf · Yan · Daniel</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Tiago</span><span class="tempo">0:20</span><span class="qual">capa</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"Boa tarde. O nosso projeto do semestre foi um compilador, construído em dez atividades. Hoje a gente vai falar do projeto final — três extensões que a gente acrescentou à linguagem.</p>
+        <p>Mas o ponto que interessa não são as extensões em si: é que elas foram baratas de implementar. E isso não foi sorte."</p>
+      </div>
+      <h4>Por que abrir assim</h4>
+      <ul>
+        <li>Você planta a tese que o Yan e o Daniel vão confirmar sem saber: as extensões saíram baratas porque as fases do compilador já estavam separadas. É o que amarra as quatro falas.</li>
+        <li>Não leia o título em voz alta — a plateia já leu.</li>
+      </ul>
+    </aside>
+  </article>
+
+  <!-- ============================= 2 ============================= -->
+  <article class="slide" data-quem="Tiago" data-tempo="0:40">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="titulo">Desde o Marco I: quatro camadas até a linguagem Fun</div>
+      <div class="destaque" style="top:120px">No <b>Marco I</b>, ao fim da Atividade 6, o compilador já traduzia expressões constantes para x86-64: léxico, parser, árvore e geração de código.</div>
+      <div class="trilha">
+        <div class="linha" style="top:342px"></div>
+        <div class="ponto" style="left:41px;top:342px"></div>
+        <div class="ponto" style="left:347px;top:342px"></div>
+        <div class="ponto" style="left:653px;top:342px"></div>
+        <div class="ponto" style="left:959px;top:342px"></div>
+        <div class="marco-l" style="left:41px;top:301px">ATIVIDADE 7</div>
+        <div class="marco-l" style="left:347px;top:301px">ATIVIDADE 8</div>
+        <div class="marco-l" style="left:653px;top:301px">ATIVIDADE 9</div>
+        <div class="marco-l" style="left:959px;top:301px">ATIVIDADE 10</div>
+        <div class="col" style="left:41px;top:390px;width:276px">
+          <h3>Precedência</h3>
+          <p>Expressões naturais, sem parênteses obrigatórios, com associatividade à esquerda.</p>
+        </div>
+        <div class="col" style="left:347px;top:390px;width:276px">
+          <h3>Variáveis</h3>
+          <p>Análise semântica, tabela de símbolos e armazenamento na seção <span class="mono">.bss</span>.</p>
+        </div>
+        <div class="col" style="left:653px;top:390px;width:276px">
+          <h3>Comandos</h3>
+          <p>Atribuição, <span class="mono">if</span> e <span class="mono">while</span>: estado mutável e controle de fluxo.</p>
+        </div>
+        <div class="col" style="left:959px;top:390px;width:276px">
+          <h3>Funções</h3>
+          <p>Parâmetros, variáveis locais e recursão. É a linguagem <b>Fun</b>, e é sobre ela que estendemos.</p>
+        </div>
+      </div>
+      <div class="destaque" style="top:600px">Nenhuma dessas etapas reescreveu a anterior — <b>cada uma acrescentou uma camada</b>. É por isso que o projeto final pôde ser pequeno.</div>
+      <div class="num">2</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Tiago</span><span class="tempo">0:40</span><span class="qual">o que foi feito desde o Marco I</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"Rapidamente, o que aconteceu desde o Marco I. No Marco I, no fim da atividade 6, a gente já tinha um compilador completo, mas para expressões constantes: análise léxica, parser, árvore sintática e geração de código x86-64.</p>
+        <p>Da atividade 7 à 10, foram quatro camadas. A sétima trouxe precedência de operadores, então as expressões deixaram de precisar de parênteses em tudo. A oitava trouxe variáveis, com análise semântica, tabela de símbolos e armazenamento na seção .bss. A nona trouxe comandos — atribuição, if e while. E a décima trouxe funções, com parâmetros, variáveis locais e recursão. Essa é a linguagem Fun.</p>
+        <p>O padrão é o que importa: <strong>nenhuma dessas etapas reescreveu a anterior — cada uma acrescentou uma camada.</strong> É isso que explica por que o projeto final pôde ser pequeno.</p>
+        <p>Sobre a Fun, a gente implementou três extensões: o operador de resto, as atribuições compostas e o comando de impressão. O Ralf começa pelo resto."</p>
+      </div>
+      <h4>Por que "desde o Marco I"</h4>
+      <ul>
+        <li>Não é escolha de recorte — é o que o enunciado exige. Ele diz que a apresentação deve mostrar "o que foi feito no compilador <strong>desde o Marco I</strong> e as extensões que foram implementadas".</li>
+        <li>E o Plano de Curso define o Marco I como sendo <strong>após a Atividade 6</strong>. Então o intervalo obrigatório é atividade 7 até 10 — exatamente o que este slide cobre. Se você começar na atividade 2, gasta tempo com o que não foi pedido.</li>
+      </ul>
+      <div class="aviso">
+        <b>Confirme antes de subir.</b> As atividades 9 e 10 não estão no repositório que você tem — ele vai só até a 8. Precedência (atv. 7) e variáveis com <span class="mono">.bss</span> (atv. 8) você pode afirmar com segurança, porque o código está lá. Já comandos, funções, parâmetros, locais e recursão vêm do deck e do roteiro da equipe: confirme a lista com quem implementou e não vá além dela.
+      </div>
+    </aside>
+  </article>
+
+  <!-- ============================= 3 ============================= -->
+  <article class="slide" data-quem="Tiago" data-tempo="0:20">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="titulo">O projeto final adicionou três extensões complementares</div>
+      <div class="cartao" style="left:41px;top:168px">
+        <h3>Operador %</h3>
+        <p>Mesmo nível de precedência de <span class="mono">*</span> e <span class="mono">/</span>. O resto vem de RDX depois do IDIV.</p>
+        <div class="tag">EXPRESSÃO</div>
+      </div>
+      <div class="cartao" style="left:457px;top:168px">
+        <h3>Atribuição composta</h3>
+        <p><span class="mono">+=</span>, <span class="mono">-=</span>, <span class="mono">*=</span>, <span class="mono">/=</span> e <span class="mono">%=</span> desfeitas no parser para uma atribuição comum.</p>
+        <div class="tag">AÇÚCAR SINTÁTICO</div>
+      </div>
+      <div class="cartao" style="left:873px;top:168px">
+        <h3>Comando print</h3>
+        <p>Avalia uma expressão e reutiliza a chamada a <span class="mono">printf</span> que já existia.</p>
+        <div class="tag">EFEITO</div>
+      </div>
+      <div class="destaque" style="top:520px">Uma toca a <b>expressão</b>, uma toca só a <b>sintaxe</b>, uma acrescenta um <b>efeito</b>. Cada uma atravessa um conjunto diferente de fases.</div>
+      <div class="num">3</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Tiago</span><span class="tempo">0:20</span><span class="qual">as três extensões · passa o bastão</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"São três extensões deliberadamente diferentes entre si. Uma mexe na expressão, uma mexe só na sintaxe, e uma acrescenta um efeito novo. Ou seja, cada uma atravessa um conjunto diferente de fases do compilador — e é isso que faz elas serem um bom teste da estrutura.</p>
+        <p>Ralf."</p>
+      </div>
+      <ul>
+        <li>Vinte segundos. Não descreva as três aqui — quem descreve são eles. Você só mostra que a escolha foi pensada.</li>
+        <li>Se o tempo estiver curto, junte este slide com o anterior e passe direto.</li>
+      </ul>
+      <h4>Se perguntarem "por que essas três?"</h4>
+      <ul>
+        <li>O enunciado do projeto final dá duas opções: <strong>uma extensão de complexidade média ou alta, ou pelo menos três extensões simples.</strong> A equipe escolheu o segundo caminho, com exatamente três.</li>
+        <li>E as três estão na própria lista de sugestões do enunciado. O operador de resto é <strong>literalmente o exemplo que o professor deu</strong> ("um operador para obter o resto de divisão"); atribuição composta aparece como "operadores compostos de atribuição como +="; e print aparece como "funções primitivas para imprimir valores na tela".</li>
+        <li>Então a resposta honesta e boa é: são as três sugeridas como simples, e são complementares — cada uma alcança um conjunto diferente de fases. Foi por isso que deu para mostrar a estrutura do compilador com elas.</li>
+      </ul>
+    </aside>
+  </article>
+
+  <!-- ============================= 4 ============================= -->
+  <article class="slide" data-quem="Ralf" data-tempo="1:30">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="titulo">Operador %: uma fase por vez, reaproveitando o que existia</div>
+      <div class="linhas">
+        <dl class="lin"><dt>Léxico</dt><dd>O símbolo <span class="mono">%</span> entra na lista de operadores reconhecidos.</dd></dl>
+        <dl class="lin"><dt>Sintático</dt><dd>Mesmo nível de precedência de <span class="mono">*</span> e <span class="mono">/</span> — processado antes da soma e da subtração.</dd></dl>
+        <dl class="lin"><dt>AST</dt><dd>Reutiliza o nó de operação binária que já existia. Nenhuma estrutura nova.</dd></dl>
+        <dl class="lin"><dt>Geração</dt><dd>O <span class="mono">IDIV</span> já calcula as duas coisas: quociente em RAX, resto em RDX. Para o módulo, basta mover RDX para RAX.</dd></dl>
+      </div>
+      <div class="destaque" style="top:582px">Semântica do <b>IDIV</b> preservada: o resto herda o sinal do dividendo, então <b class="mono">-17 % 5 = -2</b>.</div>
+      <div class="num">4</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Ralf</span><span class="tempo">1:30</span><span class="qual">operador %</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"A primeira extensão é o operador de resto da divisão, o símbolo de porcentagem.</p>
+        <p>No léxico, foi só acrescentar o símbolo à lista de operadores reconhecidos.</p>
+        <p>No sintático, ele entrou no mesmo nível de precedência da multiplicação e da divisão — então é processado antes da soma e da subtração.</p>
+        <p>Na árvore sintática, ele reaproveita o nó de operação binária que já existia. Não foi preciso criar nenhuma estrutura nova só para o módulo.</p>
+        <p>E na geração de código foi o mais econômico: a instrução IDIV do x86-64 já calcula quociente e resto ao mesmo tempo — o quociente fica em RAX e o resto em RDX. Para o módulo, a gente só move RDX para RAX.</p>
+        <p>A gente também manteve a semântica do IDIV: o resto herda o sinal do dividendo, então menos dezessete módulo cinco dá menos dois.</p>
+        <p>Então essa extensão atravessou todas as fases — léxico, parser, interpretador e geração — mas reaproveitou quase tudo. A próxima, que o Yan vai mostrar, é ainda mais barata."</p>
+      </div>
+      <ul>
+        <li>A linha do IDIV é a melhor do seu slide: o hardware já dava o resto de graça, ninguém precisou implementar divisão.</li>
+        <li>Se perguntarem por que <span class="mono">-17 % 5</span> não é 3: porque o IDIV trunca em direção ao zero, então o quociente é −3 e o resto tem que ser −2 para fechar a conta.</li>
+      </ul>
+    </aside>
+  </article>
+
+  <!-- ============================= 5 ============================= -->
+  <article class="slide" data-quem="Yan" data-tempo="1:30">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="titulo">Atribuições compostas: açúcar sintático desfeito no parser</div>
+      <div class="ops" style="top:180px">+=  -=  *=  /=  %=</div>
+      <div class="transf" style="top:268px"><span>x += 5</span><span class="seta">→</span><span>x = x + 5</span></div>
+      <div class="legenda" style="top:346px">O parser reescreve a forma composta antes de construir a árvore.</div>
+      <div class="intactos" style="top:430px">
+        <span>Nenhum nó novo<br>na AST</span>
+        <span>Análise semântica<br>intacta</span>
+        <span>Interpretador<br>intacto</span>
+        <span>Geração de código<br>intacta</span>
+      </div>
+      <div class="destaque" style="top:580px">As fases seguintes recebem uma <b>atribuição comum</b> e nem sabem que a forma composta existe.</div>
+      <div class="num">5</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Yan</span><span class="tempo">1:30</span><span class="qual">atribuições compostas</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"A segunda extensão foram os operadores de atribuição composta: mais-igual, menos-igual, vezes-igual, dividido-igual e módulo-igual.</p>
+        <p>E aqui a decisão principal foi tratar isso como açúcar sintático.</p>
+        <p>Quando o parser encontra <em>x mais-igual cinco</em>, ele produz exatamente a mesma árvore que produziria para <em>x igual x mais cinco</em>. A forma composta é desfeita ali, no parser, antes da árvore existir.</p>
+        <p>A consequência é que não foi preciso criar nó novo na árvore, nem mexer na análise semântica, nem no interpretador, nem na geração de código. Todas essas fases recebem uma atribuição comum e continuam funcionando sem saber que a forma composta existe.</p>
+        <p>É uma extensão pequena para quem escreve o programa, mas ela mostra bem a vantagem de ter as fases separadas: dá para acrescentar sintaxe sem tocar em semântica.</p>
+        <p>A terceira extensão precisou de um pouco mais, e o Daniel vai mostrar."</p>
+      </div>
+      <ul>
+        <li>Este é o slide onde a tese do Tiago fica visível. Diga a frase "sem tocar em semântica" — é o que conecta a sua fala com a abertura.</li>
+        <li>Se perguntarem sobre <span class="mono">%=</span>: ele vira <span class="mono">x = x % 5</span>, então depende do operador do Ralf. As duas extensões se encaixam sem trabalho extra.</li>
+      </ul>
+    </aside>
+  </article>
+
+  <!-- ============================= 6 ============================= -->
+  <article class="slide" data-quem="Daniel" data-tempo="1:30">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="titulo">Comando print: o único que exigiu um nó novo</div>
+      <div class="linhas">
+        <dl class="lin"><dt>Sintaxe</dt><dd><span class="mono">print</span>, uma expressão e ponto e vírgula.</dd></dl>
+        <dl class="lin"><dt>AST</dt><dd>Diferente da atribuição composta, o <span class="mono">print</span> precisou de um comando novo na árvore.</dd></dl>
+        <dl class="lin"><dt>Semântica</dt><dd>A expressão é verificada pela mesma rotina já usada nos outros comandos.</dd></dl>
+        <dl class="lin"><dt>Geração</dt><dd>Avalia a expressão e reutiliza a chamada a <span class="mono">printf</span> que já imprimia o resultado final do programa.</dd></dl>
+      </div>
+      <div class="destaque" style="top:582px">Um nó novo, <b>zero infraestrutura nova</b>: a impressão já existia, passou a ser chamada em outro ponto.</div>
+      <div class="num">6</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Daniel</span><span class="tempo">1:30</span><span class="qual">comando print</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"A terceira extensão foi o comando print. A sintaxe é a palavra <em>print</em>, uma expressão e ponto e vírgula.</p>
+        <p>Diferente da atribuição composta, aqui não deu para resolver só com açúcar sintático: o print é um comando de verdade, com um efeito, então ele precisou de um nó novo na árvore sintática.</p>
+        <p>Na análise semântica, a expressão do print é verificada pela mesma rotina que já validava as expressões dos outros comandos — isso não deu trabalho nenhum.</p>
+        <p>E na geração de código, o valor da expressão é calculado e enviado para o printf, reutilizando a infraestrutura que já imprimia o resultado final do programa. Ou seja: um nó novo, mas nenhuma infraestrutura nova. A impressão já existia; ela só passou a poder ser chamada em outro ponto do programa."</p>
+      </div>
+      <div class="aviso">
+        <b>Confirme o detalhe do printf.</b> A afirmação de que o print reutiliza a mesma chamada a <span class="mono">printf</span> que imprimia o resultado final vem do deck e do roteiro da equipe — não deu para verificar no código, porque o projeto final não está no repositório. Se a implementação real for diferente (por exemplo, uma rotina própria em vez de printf), ajuste esta linha antes de apresentar.
+      </div>
+    </aside>
+  </article>
+
+  <!-- ============================= 7 ============================= -->
+  <article class="slide" data-quem="Daniel" data-tempo="0:45">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="titulo">As três extensões em um programa</div>
+      <pre class="cod" style="left:41px;top:190px;width:560px">x = 17;
+x %= 5;
+print x;</pre>
+      <div style="position:absolute;left:648px;top:190px;width:591px">
+        <div style="font-size:18px;line-height:1.5;color:var(--tinta2)">
+          <div style="margin-bottom:18px"><span class="mono" style="color:#1667D8">x %= 5</span> é reescrito pelo parser como <span class="mono">x = x % 5</span>.</div>
+          <div style="margin-bottom:18px">O <span class="mono">%</span> gera um <span class="mono">IDIV</span> e pega o resto em RDX.</div>
+          <div><span class="mono">print</span> avalia <span class="mono">x</span> e imprime.</div>
+        </div>
+        <div style="margin-top:34px;font-size:20px">
+          <span style="color:var(--tinta3);font-size:15px;letter-spacing:.6px">SAÍDA</span>
+          <div class="mono" style="font-size:44px;font-weight:700;margin-top:6px">2</div>
+        </div>
+      </div>
+      <div class="destaque" style="top:582px">As três extensões se compõem sem tratamento especial: <b>o açúcar chama o operador, e o comando imprime o resultado.</b></div>
+      <div class="num">7</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Daniel</span><span class="tempo">0:45</span><span class="qual">exemplo</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"Um exemplo com as três juntas. A gente declara x como dezessete, usa módulo-igual cinco, e imprime.</p>
+        <p>O que acontece por dentro: o parser reescreve o módulo-igual como <em>x igual x módulo cinco</em>; o operador de módulo gera um IDIV e pega o resto em RDX; e o print avalia x e imprime. A saída é dois.</p>
+        <p>E o ponto é que nenhuma das três precisou saber das outras — elas se compõem porque cada uma ficou na sua fase."</p>
+      </div>
+      <div class="aviso">
+        <b>Troque pelo teste real.</b> Este exemplo foi escrito a partir do <span class="mono">x %= 5; print x;</span> que já aparecia no deck antigo. Se houver um arquivo de teste do projeto final com um programa parecido, use o de verdade — inclusive porque a sintaxe da declaração pode ter mudado da linguagem EV para a Fun.
+      </div>
+    </aside>
+  </article>
+
+  <!-- ============================= 8 ============================= -->
+  <article class="slide" data-quem="Daniel" data-tempo="0:45">
+    <div class="frame"><div class="canvas">
+      <div class="barra"></div>
+      <div class="titulo">31 testes, e o núcleo da linguagem intacto</div>
+      <div class="metricas" style="top:196px">
+        <div><div class="n">31/31</div><div class="l">testes passaram</div></div>
+        <div><div class="n">17</div><div class="l">programas válidos, conferidos pelo resultado</div></div>
+        <div><div class="n">14</div><div class="l">casos de erro, que precisam falhar na fase certa</div></div>
+      </div>
+      <div class="fecho" style="top:436px">Mantivemos o núcleo da linguagem Fun e ampliamos o compilador de forma controlada, reutilizando as fases que já existiam.</div>
+      <div class="destaque" style="top:582px">A suíte não prova só as extensões: ela prova que <b>o que já funcionava continua funcionando.</b></div>
+      <div class="num">8</div>
+    </div></div>
+    <aside class="notas">
+      <div class="cab"><span class="quem">Daniel</span><span class="tempo">0:45</span><span class="qual">testes e conclusão</span></div>
+      <h4>Fala</h4>
+      <div class="fala">
+        <p>"Para fechar: a suíte final tem 31 testes — 17 programas válidos, onde a gente confere o resultado, e 14 casos de erro, que precisam falhar na fase certa. Todos passaram.</p>
+        <p>E isso é mais do que testar as extensões: é confirmar que o que já funcionava continua funcionando.</p>
+        <p>Mantivemos o núcleo da linguagem Fun e ampliamos o compilador de forma controlada, reutilizando as fases que já existiam. Obrigado."</p>
+      </div>
+      <ul>
+        <li>Feche a frase do Tiago. Ele abriu dizendo que as extensões foram baratas e que não foi sorte; você acaba de mostrar o porquê.</li>
+        <li>Se der tempo e alguém perguntar o que faltou: as extensões não cobrem entrada de dados nem tipos além de inteiro — é uma resposta honesta e curta.</li>
+      </ul>
+    </aside>
+  </article>
+
+</div>
+
+<div id="barraCtrl">
+  <button id="btPrev" type="button">← anterior</button>
+  <button id="btNext" type="button">próximo →</button>
+  <span class="cont"><span id="ctAtual">1</span>/<span id="ctTotal">8</span></span>
+  <button id="btModo" type="button">ver roteiro</button>
+  <span class="dica">setas navegam · N alterna roteiro</span>
+  <span class="quem" id="ctQuem">Tiago · 0:20</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0, roteiro = false;
+  var raiz = document.documentElement;
+  var elAtual = document.getElementById('ctAtual');
+  var elQuem  = document.getElementById('ctQuem');
+  document.getElementById('ctTotal').textContent = slides.length;
+
+  function ajustar(){
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    raiz.style.setProperty('--k', k);
+    var kr = window.innerWidth < 1000 ? Math.min(.62, (window.innerWidth - 60) / 1280) : .52;
+    raiz.style.setProperty('--kr', kr);
+  }
+
+  function mostrar(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, idx){ s.classList.toggle('active', idx === i); });
+    elAtual.textContent = i + 1;
+    elQuem.textContent = slides[i].dataset.quem + ' · ' + slides[i].dataset.tempo;
+  }
+
+  function alternarModo(){
+    roteiro = !roteiro;
+    document.body.classList.toggle('roteiro', roteiro);
+    document.getElementById('btModo').textContent = roteiro ? 'apresentar' : 'ver roteiro';
+    document.getElementById('btPrev').disabled = roteiro;
+    document.getElementById('btNext').disabled = roteiro;
+    if (roteiro){
+      slides.forEach(function(s){ s.classList.add('active'); });
+    } else {
+      mostrar(i);
+      window.scrollTo(0, 0);
+    }
+  }
+
+  document.getElementById('btNext').addEventListener('click', function(){ mostrar(i + 1); });
+  document.getElementById('btPrev').addEventListener('click', function(){ mostrar(i - 1); });
+  document.getElementById('btModo').addEventListener('click', alternarModo);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'n' || e.key === 'N'){ alternarModo(); return; }
+    if (roteiro) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown'){
+      e.preventDefault(); mostrar(i + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp'){
+      e.preventDefault(); mostrar(i - 1);
+    } else if (e.key === 'Home'){ mostrar(0); }
+    else if (e.key === 'End'){ mostrar(slides.length - 1); }
+  });
+
+  window.addEventListener('resize', ajustar);
+  ajustar();
+  mostrar(0);
+})();
+</script>
