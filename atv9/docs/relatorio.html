@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atividade 09, Comandos, Relatório</title>
+<style>
+  @page { size: A4; margin: 17mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10pt; line-height: 1.38; color: #1b1b1f; margin: 0; }
+  h1 { font-size: 19pt; margin: 0 0 2px 0; letter-spacing: .2px; }
+  h2 { font-size: 11.5pt; margin: 14px 0 6px 0; padding-bottom: 3px; border-bottom: 1.5px solid #c8102e; text-transform: uppercase; letter-spacing: .6px; color: #101014; }
+  h3 { font-size: 10pt; margin: 12px 0 4px 0; color: #c8102e; }
+  p { margin: 0 0 7px 0; text-align: justify; }
+  ul { margin: 0 0 8px 0; padding-left: 17px; }
+  li { margin-bottom: 3px; }
+  .cab { border-bottom: 3px solid #1b1b1f; padding-bottom: 9px; margin-bottom: 4px; }
+  .sub { font-size: 9.5pt; color: #55555f; }
+  .grupo { font-size: 9.5pt; margin-top: 6px; }
+  .grupo strong { color: #101014; }
+  .tag { display: inline-block; background: #c8102e; color: #fff; font-size: 7.5pt; letter-spacing: .8px; padding: 2px 7px; border-radius: 2px; vertical-align: 3px; margin-left: 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 5px 0 8px 0; font-size: 9pt; }
+  th { text-align: left; background: #f2f2f4; border-bottom: 1.5px solid #1b1b1f; padding: 5px 7px; font-weight: 700; }
+  td { padding: 4.5px 7px; border-bottom: .8px solid #e0e0e5; vertical-align: top; }
+  code, pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
+  code { background: #f2f2f4; padding: 1px 3px; border-radius: 2px; }
+  pre { background: #f7f7f9; border-left: 2.5px solid #c8102e; padding: 8px 10px; margin: 5px 0 10px 0; white-space: pre; line-height: 1.35; }
+  .ok { color: #0a7d34; font-weight: 700; }
+  .cols { display: flex; gap: 14px; }
+  .col { flex: 1; }
+  .nota { font-size: 8.8pt; color: #55555f; margin-top: 3px; }
+  .caixa { background: #f7f7f9; border: .8px solid #dcdce2; padding: 8px 11px; margin: 6px 0 10px 0; }
+</style>
+</head>
+<body>
+
+<div class="cab">
+  <h1>Atividade 09, Comandos<span class="tag">RELATÓRIO</span></h1>
+  <div class="sub">O que foi implementado e resultados, Compiladores, UFPB, julho de 2026</div>
+  <div class="grupo"><strong>Grupo:</strong> Daniel Victor, Tiago Trindade, Yann Fabber, Ralf Dwerich</div>
+</div>
+
+<h2>1. Resumo da entrega</h2>
+<p>
+Entregamos um compilador completo para a linguagem <strong>Cmd</strong>, escrito em Python 3 puro,
+que traduz o fonte para assembly x86_64 em sintaxe AT&amp;T e monta o executável chamando o gcc.
+O pacote inclui as quatro fases do compilador, um interpretador de referência usado como oráculo
+nos testes, 16 programas de teste válidos, 7 casos de erro e a documentação de uso.
+</p>
+<div class="caixa">
+<strong>Resultado:</strong> <span class="ok">23 de 23 testes passando</span>, cada programa válido conferido
+nas duas vias de execução. Cobre integralmente a linguagem do guia mais cinco extensões da seção Variações.
+Nenhuma dependência externa além de Python 3 e gcc.
+</div>
+
+<h2>2. Arquitetura final</h2>
+<table>
+<tr><th style="width:19%">Fase</th><th style="width:24%">Arquivo</th><th style="width:20%">Entrada</th><th>Saída</th></tr>
+<tr><td>Léxica</td><td><code>cmdlang/lexico.py</code></td><td>texto do fonte</td><td>lista de tokens com linha e coluna</td></tr>
+<tr><td>Sintática</td><td><code>cmdlang/sintatico.py</code></td><td>tokens</td><td>árvore sintática abstrata</td></tr>
+<tr><td>Semântica</td><td><code>cmdlang/semantico.py</code></td><td>árvore</td><td>tabela de símbolos validada</td></tr>
+<tr><td>Geração</td><td><code>cmdlang/codigo.py</code></td><td>árvore e tabela</td><td>assembly x86_64</td></tr>
+<tr><td>Apoio</td><td><code>cmdlang/interp.py</code></td><td>árvore</td><td>valor do resultado, usado nos testes</td></tr>
+<tr><td>Interface</td><td><code>cmdc.py</code></td><td>linha de comando</td><td>tokens, árvore, assembly ou executável</td></tr>
+</table>
+
+<h2>3. O que foi feito em cada fase</h2>
+
+<h3>3.1 Análise léxica</h3>
+<ul>
+<li>Novos tokens: <code>{</code>, <code>}</code>, <code>&lt;</code>, <code>&gt;</code>, <code>==</code> e as palavras chave <code>if</code>, <code>else</code>, <code>while</code>, <code>return</code>.</li>
+<li>Ambiguidade do <code>=</code> resolvida testando o par de caracteres antes dos operadores de um caractere. A mesma regra cobre <code>&lt;=</code>, <code>&gt;=</code> e <code>!=</code>.</li>
+<li>Palavras chave reconhecidas como identificador e depois reclassificadas por consulta a um conjunto, como sugere o guia.</li>
+<li>Todo token carrega linha e coluna, o que dá mensagem de erro precisa nas fases seguintes.</li>
+</ul>
+
+<h3>3.2 Análise sintática</h3>
+<ul>
+<li>Descida recursiva com uma função por não terminal. A lista de declarações termina quando aparece <code>{</code>; a lista de comandos termina quando aparece <code>return</code> ou <code>}</code>.</li>
+<li>Um comando é decidido por um único token de lookahead: <code>if</code>, <code>while</code>, <code>read</code> ou identificador.</li>
+<li>Foi adicionado o nível de precedência das comparações, abaixo de soma e subtração, no mesmo formato das funções aditiva e multiplicativa.</li>
+<li><code>return</code> não é comando: fica fora de <code>lista_comandos</code>, então usá lo dentro de um <code>if</code> é erro sintático, conforme o guia. Existe teste para isso.</li>
+</ul>
+
+<h3>3.3 Análise semântica</h3>
+<ul>
+<li>Tabela de símbolos preserva a ordem de declaração, que é a ordem usada depois na seção BSS.</li>
+<li>Na atribuição verificamos os dois lados: nenhuma variável do lado direito pode ser desconhecida e o alvo do lado esquerdo precisa já estar declarado. Nada é inserido na tabela.</li>
+<li>A expressão de uma declaração só enxerga o que foi declarado antes dela.</li>
+<li>Declaração duplicada é erro. A mensagem informa fase, linha, coluna e o nome da variável.</li>
+</ul>
+
+<h3>3.4 Geração de código</h3>
+<ul>
+<li>Cada variável vira um símbolo de 8 bytes na seção <code>.bss</code>, lido e escrito de forma relativa a RIP.</li>
+<li>Toda expressão deixa o resultado em RAX. Operação binária avalia o lado direito, empilha, avalia o lado esquerdo, desempilha em RBX e aplica a instrução. Divisão usa <code>cqto</code> antes de <code>idivq</code>.</li>
+<li>Comparações seguem o modelo do guia: <code>xorq</code> em RCX, <code>cmpq</code>, <code>setz</code>, <code>setl</code> ou <code>setg</code> em CL e transferência de RCX para RAX.</li>
+<li>Condicional e repetição usam <code>cmpq $0, %rax</code>, <code>jz</code> e rótulos numerados por um contador global, garantindo nomes únicos em construções aninhadas.</li>
+<li>A atribuição reaproveita exatamente o código da declaração, já que a verificação semântica passou.</li>
+</ul>
+
+<pre>if E { C1 } else { C2 }        while E { C }
+
+  &lt;codigo_E&gt;                   Linicio0:
+  cmpq $0, %rax                  &lt;codigo_E&gt;
+  jz Lfalso0                     cmpq $0, %rax
+  &lt;codigo_C1&gt;                    jz Lfim0
+  jmp Lfim0                      &lt;codigo_C&gt;
+Lfalso0:                         jmp Linicio0
+  &lt;codigo_C2&gt;                  Lfim0:
+Lfim0:</pre>
+
+<h2>4. Extensões implementadas</h2>
+<table>
+<tr><th style="width:30%">Extensão</th><th>Como foi feita</th></tr>
+<tr><td>Comparações <code>&lt;=</code> <code>&gt;=</code> <code>!=</code></td><td>Mesmo nível de precedência das outras comparações, geradas com <code>setle</code>, <code>setge</code> e <code>setnz</code>.</td></tr>
+<tr><td>Booleanos <code>and</code> <code>or</code> <code>not</code></td><td>Três novos níveis de precedência abaixo das comparações. Avaliação com curto circuito por salto condicional, resultado normalizado em 0 ou 1.</td></tr>
+<tr><td><code>if</code> sem <code>else</code></td><td>Braço opcional na gramática. Não há ambiguidade de dangling else porque as chaves são obrigatórias.</td></tr>
+<tr><td>Comando <code>read v;</code></td><td>Lê um inteiro da entrada padrão via <code>scanf</code> e grava direto no símbolo da variável, que precisa estar declarada.</td></tr>
+<tr><td>Comentários com <code>#</code></td><td>Descartados no analisador léxico. Usados também para declarar o resultado esperado de cada teste.</td></tr>
+</table>
+
+<h2>5. Diferenças em relação ao guia</h2>
+<ul>
+<li>O resultado é impresso em stdout com <code>printf</code>, não devolvido como código de saída. O processo sempre termina com 0.</li>
+<li>Na gramática do guia o fecho <code>*</code> sobre o grupo de operadores de comparação é erro de digitação. Aqui cada comparação consome um operador, com associatividade à esquerda.</li>
+<li>Declaração duplicada é tratada como erro semântico, ponto que o guia não define.</li>
+<li>Aritmética de 64 bits com sinal e divisão truncando em direção a zero, seguindo a semântica de <code>IDIV</code>. O interpretador de referência replica esse comportamento, inclusive o transbordo.</li>
+<li>Identificadores aceitam <code>_</code> e dígitos após a primeira letra.</li>
+</ul>
+
+<h2>6. Resultados dos testes</h2>
+<p>
+<code>python3 tests/rodar_testes.py</code> compila e executa tudo. Cada programa válido roda no
+interpretador e no binário nativo, e os dois valores são comparados com o esperado declarado no
+topo do arquivo. Cada programa de erro precisa falhar exatamente na fase indicada.
+Resultado: <span class="ok">23 de 23 testes passando</span>, sem divergência entre as duas vias.
+</p>
+<div class="cols">
+<div class="col">
+<table>
+<tr><th>Programa válido</th><th style="width:24%">Obtido</th></tr>
+<tr><td>01 minimo</td><td>42</td></tr>
+<tr><td>02 delta</td><td>8</td></tr>
+<tr><td>03 soma</td><td>45</td></tr>
+<tr><td>04 resto</td><td>2</td></tr>
+<tr><td>05 mdc</td><td>6</td></tr>
+<tr><td>06 comparacoes</td><td>47</td></tr>
+<tr><td>07 logicos</td><td>7</td></tr>
+<tr><td>08 if sem else</td><td>30</td></tr>
+<tr><td>09 fatorial</td><td>3628800</td></tr>
+<tr><td>10 fibonacci</td><td>6765</td></tr>
+<tr><td>11 primos</td><td>10</td></tr>
+<tr><td>12 leitura</td><td>55</td></tr>
+<tr><td>13 precedencia</td><td>11</td></tr>
+<tr><td>14 divisao</td><td>3</td></tr>
+<tr><td>15 aninhado</td><td>75</td></tr>
+<tr><td>16 blocos vazios</td><td>5</td></tr>
+</table>
+</div>
+<div class="col">
+<table>
+<tr><th>Caso de erro</th><th style="width:32%">Fase obtida</th></tr>
+<tr><td>e01 var não declarada</td><td>semântico</td></tr>
+<tr><td>e02 atrib não declarada</td><td>semântico</td></tr>
+<tr><td>e03 declaração duplicada</td><td>semântico</td></tr>
+<tr><td>e04 return dentro do if</td><td>sintático</td></tr>
+<tr><td>e05 falta chave no while</td><td>sintático</td></tr>
+<tr><td>e06 caractere inválido</td><td>léxico</td></tr>
+<tr><td>e07 falta return</td><td>sintático</td></tr>
+</table>
+<p class="nota">
+Os quatro programas do guia (delta, soma, resto e mdc) entraram sem alteração de código,
+o que confirma compatibilidade com a sintaxe concreta original. Os demais cobrem aninhamento,
+precedência, divisão com sinal, blocos vazios, entrada e cada extensão.
+</p>
+</div>
+</div>
+
+<h2>7. Como executar</h2>
+<pre>python3 cmdc.py check   prog.cmd     tres analises, reporta erros
+python3 cmdc.py tokens  prog.cmd     lista de tokens
+python3 cmdc.py ast     prog.cmd     arvore sintatica
+python3 cmdc.py asm     prog.cmd     assembly x86_64 em stdout
+python3 cmdc.py build   prog.cmd     executavel via gcc
+python3 cmdc.py run     prog.cmd     compila e executa
+python3 cmdc.py interp  prog.cmd     interpretador de referencia
+
+make test        roda os 23 testes
+make exemplos    resultado de todos os programas de exemplo</pre>
+<p class="nota">
+Requer Python 3.8 ou superior e gcc. Os binários gerados são Linux x86_64. Em outra
+arquitetura, use <code>interp</code>; o próprio runner de testes detecta a plataforma e avisa
+quando pula a verificação nativa.
+</p>
+
+<h2>8. Aderência ao planejamento</h2>
+<table>
+<tr><th style="width:34%">Item planejado</th><th style="width:14%">Situação</th><th>Observação</th></tr>
+<tr><td>Quatro fases do compilador</td><td><span class="ok">feito</span></td><td>Sem desvio em relação ao plano</td></tr>
+<tr><td>Interpretador como oráculo</td><td><span class="ok">feito</span></td><td>Pegou de fato divergências durante o desenvolvimento das comparações</td></tr>
+<tr><td>Quatro extensões da seção Variações</td><td><span class="ok">feito</span></td><td>Entrou também comentário de linha, que não estava no plano e saiu de graça no léxico</td></tr>
+<tr><td>Atribuição criando variável nova</td><td>não feito</td><td>Descartado ainda no planejamento, por conflitar com a verificação semântica pedida na atividade</td></tr>
+<tr><td>Cobertura mínima de testes</td><td><span class="ok">superado</span></td><td>Plano previa cobrir cada construção, terminamos com 16 programas e 7 casos de erro</td></tr>
+</table>
+
+<h2>9. Limitações e trabalho futuro</h2>
+<ul>
+<li>Sem otimização. Toda expressão passa pela pilha, mesmo quando um registrador bastaria.</li>
+<li>Divisão por zero não é detectada em tempo de compilação e gera SIGFPE no binário. O interpretador reporta erro claro.</li>
+<li>Não há detecção de transbordo aritmético, o comportamento é o do registrador de 64 bits.</li>
+<li>Próximo passo natural, se a atividade seguinte pedir: permitir que a atribuição crie variáveis, inserindo o símbolo na BSS durante a geração.</li>
+</ul>
+
+</body>
+</html>

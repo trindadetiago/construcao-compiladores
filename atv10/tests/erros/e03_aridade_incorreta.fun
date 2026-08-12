@@ -1,0 +1,3 @@
+# erro: semantico
+fun soma(a, b) { return a + b; }
+main { return soma(1); }

@@ -22,6 +22,8 @@ Repositorio com as atividades da disciplina de Construcao de Compiladores.
 | [`atv6/`](atv6/) | Expressoes Constantes 1 - Geracao de Codigo | Concluida |
 | [`atv7/`](atv7/) | Expressoes Constantes 2 - Precedencia e Associatividade | Concluida |
 | [`atv8/`](atv8/) | Expressoes com Variaveis - Analise Semantica e Codigo | Concluida |
+| [`atv9/`](atv9/) | Linguagem Cmd - Comandos, Controle de Fluxo e Codigo | Concluida |
+| [`atv10/`](atv10/) | Linguagem Fun - Funcoes, Escopo e Recursao | Concluida |
 
 Cada pasta contem o enunciado da atividade (PDF), o codigo entregue e a
 documentacao de uso especifica.

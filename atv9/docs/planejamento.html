@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atividade 09, Comandos, Planejamento</title>
+<style>
+  @page { size: A4; margin: 17mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #1b1b1f; margin: 0; }
+  h1 { font-size: 19pt; margin: 0 0 2px 0; letter-spacing: .2px; }
+  h2 { font-size: 11.5pt; margin: 19px 0 7px 0; padding-bottom: 3px; border-bottom: 1.5px solid #1f4fd8; text-transform: uppercase; letter-spacing: .6px; color: #101014; }
+  h3 { font-size: 10pt; margin: 12px 0 4px 0; color: #1f4fd8; }
+  p { margin: 0 0 7px 0; text-align: justify; }
+  ul { margin: 0 0 8px 0; padding-left: 17px; }
+  li { margin-bottom: 3px; }
+  .cab { border-bottom: 3px solid #1b1b1f; padding-bottom: 9px; margin-bottom: 4px; }
+  .sub { font-size: 9.5pt; color: #55555f; }
+  .grupo { font-size: 9.5pt; margin-top: 6px; }
+  .grupo strong { color: #101014; }
+  .tag { display: inline-block; background: #1f4fd8; color: #fff; font-size: 7.5pt; letter-spacing: .8px; padding: 2px 7px; border-radius: 2px; vertical-align: 3px; margin-left: 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px 0; font-size: 9pt; }
+  th { text-align: left; background: #f2f2f4; border-bottom: 1.5px solid #1b1b1f; padding: 5px 7px; font-weight: 700; }
+  td { padding: 4.5px 7px; border-bottom: .8px solid #e0e0e5; vertical-align: top; }
+  code, pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
+  code { background: #f2f2f4; padding: 1px 3px; border-radius: 2px; }
+  pre { background: #f7f7f9; border-left: 2.5px solid #1f4fd8; padding: 8px 10px; margin: 5px 0 10px 0; white-space: pre; line-height: 1.35; }
+  .caixa { background: #f4f6fd; border: .8px solid #ccd6f5; padding: 8px 11px; margin: 6px 0 10px 0; }
+  .nota { font-size: 8.8pt; color: #55555f; margin-top: 3px; }
+  .must { color: #b3261e; font-weight: 700; font-size: 8.5pt; }
+  .nice { color: #55555f; font-weight: 700; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+
+<div class="cab">
+  <h1>Atividade 09, Comandos<span class="tag">PLANEJAMENTO</span></h1>
+  <div class="sub">Plano de execução, Compiladores, UFPB, julho de 2026</div>
+  <div class="grupo"><strong>Grupo:</strong> Daniel Victor, Tiago Trindade, Yann Fabber, Ralf Dwerich</div>
+</div>
+
+<h2>1. Objetivo</h2>
+<p>
+Construir um compilador para a linguagem <strong>Cmd</strong>, a primeira linguagem Turing completa
+da disciplina. Em relação à atividade anterior, a linguagem ganha comando condicional, comando de
+repetição, comando de atribuição e operadores de comparação. Isso obriga a mexer nas quatro fases
+do compilador, com o maior impacto na geração de código, que passa a precisar de saltos e rótulos.
+</p>
+
+<h2>2. Escopo derivado do guia</h2>
+<table>
+<tr><th style="width:26%">Item</th><th>O que precisa existir</th><th style="width:13%">Prioridade</th></tr>
+<tr><td>Estrutura do programa</td><td>Zero ou mais declarações, corpo entre chaves com zero ou mais comandos e uma expressão <code>return</code></td><td><span class="must">obrigatório</span></td></tr>
+<tr><td>Comandos</td><td><code>if</code> com <code>else</code>, <code>while</code> e atribuição a variável já declarada</td><td><span class="must">obrigatório</span></td></tr>
+<tr><td>Comparações</td><td><code>&lt;</code>, <code>&gt;</code> e <code>==</code> em um nível de precedência abaixo da soma</td><td><span class="must">obrigatório</span></td></tr>
+<tr><td>Verdade e falsidade</td><td>Zero é falso, qualquer outro valor é verdadeiro, sem tipo booleano separado</td><td><span class="must">obrigatório</span></td></tr>
+<tr><td>Verificação semântica</td><td>Erro ao usar ou atribuir variável não declarada, dos dois lados da atribuição</td><td><span class="must">obrigatório</span></td></tr>
+<tr><td>Programas de teste</td><td>Cobrindo condicional, repetição e atribuição, com documentação de execução</td><td><span class="must">obrigatório</span></td></tr>
+<tr><td>Extensões</td><td>Seção Variações do guia: novos operadores, booleanos, entrada, <code>if</code> sem <code>else</code></td><td><span class="nice">desejável</span></td></tr>
+</table>
+
+<h2>3. Estratégia técnica</h2>
+<ul>
+<li><strong>Implementação em Python 3 puro</strong>, sem gerador de parser e sem dependência externa. Descida recursiva escrita à mão, uma função por não terminal, para o código ficar próximo da gramática do guia.</li>
+<li><strong>Alvo x86_64 em sintaxe AT&amp;T</strong>, montado e linkado pelo gcc. Seguimos o modelo de tradução do guia instrução por instrução, sem otimização.</li>
+<li><strong>Interpretador de referência</strong> escrito junto com o compilador. Ele executa a mesma árvore sintática e serve de oráculo: todo teste roda nas duas vias e os resultados precisam bater. É a forma mais barata de encontrar bug de geração de código.</li>
+<li><strong>Erros com fase, linha e coluna</strong> desde o analisador léxico, para que os casos de teste de erro possam ser verificados de forma automática.</li>
+</ul>
+
+<h2>4. Plano por fase</h2>
+<table>
+<tr><th style="width:16%">Fase</th><th style="width:44%">O que muda em relação à atividade anterior</th><th>Entregável</th></tr>
+<tr><td>Léxica</td><td>Tokens <code>{</code> <code>}</code>, operadores de comparação e palavras chave. Resolver <code>=</code> contra <code>==</code> por lookahead de um caractere e reclassificar identificador em palavra chave por consulta a conjunto</td><td><code>lexico.py</code></td></tr>
+<tr><td>Sintática</td><td>Reconhecer lista de comandos, blocos com chaves obrigatórias e um novo nível de precedência para comparações. Manter <code>return</code> fora da lista de comandos</td><td><code>sintatico.py</code>, <code>ast.py</code></td></tr>
+<tr><td>Semântica</td><td>Verificar os dois lados da atribuição contra a tabela de símbolos, sem inserir nada nela</td><td><code>semantico.py</code></td></tr>
+<tr><td>Geração</td><td>Comparações com <code>CMP</code> e <code>SETcc</code>, condicional e repetição com <code>JZ</code> e rótulos únicos gerados por contador global</td><td><code>codigo.py</code></td></tr>
+<tr><td>Apoio</td><td>Interpretador de referência, interface de linha de comando e runner de testes</td><td><code>interp.py</code>, <code>cmdc.py</code></td></tr>
+</table>
+
+<div class="caixa">
+<strong>Risco principal identificado desde o início:</strong> rótulos duplicados em <code>if</code> e <code>while</code> aninhados.
+Mitigação decidida antes de escrever código: um único contador global no gerador, incrementado a cada construção,
+concatenado no nome de todos os rótulos daquela construção.
+</div>
+
+<h2>5. Extensões planejadas</h2>
+<table>
+<tr><th style="width:32%">Extensão</th><th>Decisão</th></tr>
+<tr><td>Comparações <code>&lt;=</code> <code>&gt;=</code> <code>!=</code></td><td>Fazer. Custo baixo, reaproveita o nível de precedência e só adiciona três instruções <code>SETcc</code>.</td></tr>
+<tr><td>Booleanos <code>and</code> <code>or</code> <code>not</code></td><td>Fazer. Três novos níveis de precedência abaixo das comparações, com curto circuito por salto condicional.</td></tr>
+<tr><td><code>if</code> sem <code>else</code></td><td>Fazer. Sem ambiguidade de dangling else, já que as chaves são obrigatórias.</td></tr>
+<tr><td>Comando de entrada</td><td>Fazer. <code>read v;</code> com <code>scanf</code>, escrevendo direto no símbolo da variável.</td></tr>
+<tr><td>Atribuição criando variável nova</td><td>Não fazer. O guia avisa que complica a geração e é justamente a verificação semântica pedida na atividade. Fica registrado como possível trabalho futuro.</td></tr>
+</table>
+
+<h2>6. Estratégia de testes</h2>
+<ul>
+<li>Cada programa de teste declara o resultado esperado em um comentário no topo do próprio arquivo, lido pelo runner.</li>
+<li>Todo programa válido roda duas vezes, no interpretador e no binário nativo, e os dois valores são comparados com o esperado. Divergência entre as duas vias aponta bug de geração de código.</li>
+<li>Os quatro programas de exemplo do guia entram sem alteração, como prova de compatibilidade com a sintaxe concreta original.</li>
+<li>Programas de erro ficam em pasta separada e declaram a fase em que devem falhar. Não basta falhar, precisa falhar na fase certa.</li>
+<li>Cobertura mínima combinada: condicional, repetição, atribuição, aninhamento, precedência, divisão com sinal, blocos vazios, entrada e cada extensão.</li>
+</ul>
+
+<h2>7. Divisão de trabalho</h2>
+<table>
+<tr><th style="width:26%">Responsável</th><th>Frente</th></tr>
+<tr><td>Daniel Victor</td><td>Geração de código, modelo de saltos e rótulos, interface de linha de comando</td></tr>
+<tr><td>Tiago Trindade</td><td>Análises léxica e sintática, precedência das comparações</td></tr>
+<tr><td>Yann Fabber</td><td>Análise semântica, tabela de símbolos, mensagens de erro</td></tr>
+<tr><td>Ralf Dwerich</td><td>Suíte de testes, extensões da seção Variações, documentação</td></tr>
+</table>
+
+<h2>8. Sequência de execução</h2>
+<pre>Etapa 1   gramatica fechada, tokens definidos, esqueleto do projeto
+Etapa 2   lexico e sintatico completos, acao ast conferindo as arvores
+Etapa 3   semantico e interpretador de referencia, ja com casos de erro
+Etapa 4   geracao de codigo, primeiro expressoes, depois if e while
+Etapa 5   extensoes, suite completa de testes, README e este relatorio</pre>
+<p class="nota">
+Cada etapa só é considerada fechada quando os testes acumulados até ali passam. A ordem coloca o
+interpretador antes da geração de código de propósito: quando o assembly começar a sair errado,
+já existe um resultado correto para comparar.
+</p>
+
+<h2>9. Riscos e mitigação</h2>
+<table>
+<tr><th style="width:38%">Risco</th><th>Mitigação</th></tr>
+<tr><td>Rótulos repetidos em construções aninhadas</td><td>Contador global no gerador e teste com laço dentro de laço com condicional no meio</td></tr>
+<tr><td>Ordem errada dos operandos em <code>CMP</code>, invertendo <code>&lt;</code> e <code>&gt;</code></td><td>Teste dedicado somando um bit distinto por comparação, o que revela qual delas quebrou</td></tr>
+<tr><td>Divisão com sinal sem estender para RDX</td><td><code>cqto</code> antes de <code>idivq</code> e teste com dividendo negativo</td></tr>
+<tr><td>Resultado maior que 255 perdido no código de saída do processo</td><td>Imprimir o resultado com <code>printf</code> e testar com 10 fatorial</td></tr>
+<tr><td>Corretor sem máquina x86_64</td><td>O runner detecta a plataforma, avisa e cai para o interpretador de referência</td></tr>
+</table>
+
+<h2>10. Critérios de aceitação</h2>
+<ul>
+<li>Os quatro programas do guia compilam sem alteração e devolvem 8, 45, 2 e 6.</li>
+<li>Toda a suíte passa nas duas vias de execução, interpretador e binário nativo.</li>
+<li>Todo caso de erro falha na fase declarada, com linha e coluna na mensagem.</li>
+<li>README explica como executar o compilador e os testes e lista as diferenças em relação ao guia, exigência da seção 8 da atividade.</li>
+<li>Nenhuma dependência externa além de Python 3 e gcc.</li>
+</ul>
+
+</body>
+</html>
